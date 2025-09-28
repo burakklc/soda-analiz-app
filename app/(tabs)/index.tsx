@@ -1,5 +1,5 @@
 // app/(tabs)/index.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -112,41 +112,45 @@ export default function TabHome() {
   }, []);
 
   // Ürünleri çek
-  async function loadProducts(opts?: { silent?: boolean }) {
-    try {
-      if (!opts?.silent) setLoading(true);
-      setErr(null);
-      setHighlights(null);
+const loadProducts = useCallback(async (opts?: { silent?: boolean }) => {
+  try {
+    if (!opts?.silent) setLoading(true);
+    setErr(null);
+    setHighlights(null);
 
-      const params: Record<string, unknown> = {
-        profile: activeProfile || undefined,
-        q: q || undefined,
-        sortBy: "composition.na",
-        sortDir: "asc",
-        page: 1, pageSize: 50,
-        // filtreler
-        minNa: num(minNa), maxNa: num(maxNa),
-        minMg: num(minMg), maxMg: num(maxMg),
-        minCa: num(minCa), maxCa: num(maxCa),
-        minHCO3: num(minHCO3), maxHCO3: num(maxHCO3),
-        minPH: num(minPH), maxPH: num(maxPH),
-        minNO3: num(minNO3), maxNO3: num(maxNO3),
-        minTDS: num(minTDS), maxTDS: num(maxTDS),
-      };
+    const params: Record<string, unknown> = {
+      profile: activeProfile || undefined,
+      q: q || undefined,
+      sortBy: "composition.na",
+      sortDir: "asc",
+      page: 1, pageSize: 50,
+      // filtreler
+      minNa: num(minNa), maxNa: num(maxNa),
+      minMg: num(minMg), maxMg: num(maxMg),
+      minCa: num(minCa), maxCa: num(maxCa),
+      minHCO3: num(minHCO3), maxHCO3: num(maxHCO3),
+      minPH: num(minPH), maxPH: num(maxPH),
+      minNO3: num(minNO3), maxNO3: num(maxNO3),
+      minTDS: num(minTDS), maxTDS: num(maxTDS),
+    };
 
-      const res = await fetch(`${BASE}/products` + toQS(params));
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setRows(data.items ?? []);
-    } catch (e: any) {
-      setErr(e?.message ?? "Hata");
-    } finally {
-      if (!opts?.silent) setLoading(false);
-    }
+    const res = await fetch(`${BASE}/products` + toQS(params));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    setRows(data.items ?? []);
+  } catch (e: any) {
+    setErr(e?.message ?? "Hata");
+  } finally {
+    if (!opts?.silent) setLoading(false);
   }
+  // NOT: rankByProfile eklediğinde, rankBy state’ini de deps’e ekle (aşağıda)
+}, [
+  activeProfile, q,
+  minNa, maxNa, minMg, maxMg, minCa, maxCa,
+  minHCO3, maxHCO3, minPH, maxPH, minNO3, maxNO3, minTDS, maxTDS
+  // + ileride: rankBy
+]);
 
-  useEffect(() => { loadProducts(); }, []);
-  useEffect(() => { loadProducts(); }, [activeProfile]);
 
   // Pull-to-refresh
   const onRefresh = async () => {
